@@ -1,0 +1,16 @@
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using MentorFlow.API.DTOs;
+using MentorFlow.API.Interfaces;
+
+namespace MentorFlow.API.Controllers;
+
+[ApiController, Route("api/mentors"), Authorize]
+public sealed class MentorsController(IMentorService service) : ControllerBase
+{
+    [HttpGet, Authorize(Roles = "Admin,Mentor,Student")] public Task<IReadOnlyList<MentorResponse>> GetAll(CancellationToken ct) => service.GetAllAsync(ct);
+    [HttpGet("{id:int}"), Authorize(Roles = "Admin,Mentor,Student")] public Task<MentorResponse> Get(int id, CancellationToken ct) => service.GetByIdAsync(id, ct);
+    [HttpPost, Authorize(Roles = "Admin")] public async Task<ActionResult<MentorResponse>> Create(CreateMentorRequest request, CancellationToken ct) { var result = await service.CreateAsync(request, ct); return CreatedAtAction(nameof(Get), new { id = result.MentorId }, result); }
+    [HttpPut("{id:int}"), Authorize(Roles = "Admin")] public Task<MentorResponse> Update(int id, UpdateMentorRequest request, CancellationToken ct) => service.UpdateAsync(id, request, ct);
+    [HttpDelete("{id:int}"), Authorize(Roles = "Admin")] public async Task<IActionResult> Delete(int id, CancellationToken ct) { await service.DeleteAsync(id, ct); return NoContent(); }
+}

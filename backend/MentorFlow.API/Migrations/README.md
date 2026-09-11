@@ -1,0 +1,1 @@
+The existing `database/MentorFlowDb.sql` is the source-of-truth schema for V1. The application verifies that this database is reachable and seeds it, but does not create or alter the schema automatically. Add generated EF migrations only if the schema migration strategy is intentionally adopted later.

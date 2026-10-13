@@ -1,7 +1,7 @@
 namespace MentorFlow.API.Entities;
-
 public sealed class Meeting
 {
+    public byte[] RowVersion { get; set; } = [];
     public int MeetingId { get; set; }
     public int MentorStudentId { get; set; }
     public DateTime MeetingAt { get; set; }

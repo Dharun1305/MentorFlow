@@ -2,7 +2,6 @@ using Microsoft.EntityFrameworkCore;
 using MentorFlow.API.Entities;
 
 namespace MentorFlow.API.Data;
-
 public sealed class MentorFlowDbContext(DbContextOptions<MentorFlowDbContext> options) : DbContext(options)
 {
     public DbSet<Role> Roles => Set<Role>();
@@ -25,7 +24,6 @@ public sealed class MentorFlowDbContext(DbContextOptions<MentorFlowDbContext> op
             entity.Property(role => role.UpdatedAt).HasColumnType("datetime2(0)").HasDefaultValueSql("SYSUTCDATETIME()");
             entity.HasIndex(role => role.Name).IsUnique().HasDatabaseName("UQ_Roles_Name");
         });
-
         modelBuilder.Entity<User>(entity =>
         {
             entity.ToTable("Users");
@@ -40,7 +38,6 @@ public sealed class MentorFlowDbContext(DbContextOptions<MentorFlowDbContext> op
             entity.HasIndex(user => new { user.RoleId, user.IsActive }).HasDatabaseName("IX_Users_RoleId_IsActive");
             entity.HasOne(user => user.Role).WithMany(role => role.Users).HasForeignKey(user => user.RoleId).OnDelete(DeleteBehavior.Restrict);
         });
-
         modelBuilder.Entity<Student>(entity =>
         {
             entity.ToTable("Students");
@@ -52,7 +49,6 @@ public sealed class MentorFlowDbContext(DbContextOptions<MentorFlowDbContext> op
             entity.HasIndex(student => student.StudentCode).IsUnique().HasDatabaseName("UQ_Students_StudentCode");
             entity.HasOne(student => student.User).WithOne(user => user.Student).HasForeignKey<Student>(student => student.UserId).OnDelete(DeleteBehavior.Restrict);
         });
-
         modelBuilder.Entity<Mentor>(entity =>
         {
             entity.ToTable("Mentors");
@@ -65,7 +61,6 @@ public sealed class MentorFlowDbContext(DbContextOptions<MentorFlowDbContext> op
             entity.HasIndex(mentor => mentor.EmployeeCode).IsUnique().HasDatabaseName("UQ_Mentors_EmployeeCode");
             entity.HasOne(mentor => mentor.User).WithOne(user => user.Mentor).HasForeignKey<Mentor>(mentor => mentor.UserId).OnDelete(DeleteBehavior.Restrict);
         });
-
         modelBuilder.Entity<MentorStudent>(entity =>
         {
             entity.ToTable("MentorStudents");
@@ -74,16 +69,16 @@ public sealed class MentorFlowDbContext(DbContextOptions<MentorFlowDbContext> op
             entity.Property(assignment => assignment.UnassignedAt).HasColumnType("datetime2(0)");
             entity.Property(assignment => assignment.CreatedAt).HasColumnType("datetime2(0)").HasDefaultValueSql("SYSUTCDATETIME()");
             entity.Property(assignment => assignment.UpdatedAt).HasColumnType("datetime2(0)").HasDefaultValueSql("SYSUTCDATETIME()");
-            entity.HasIndex(assignment => new { assignment.MentorId, assignment.StudentId }).IsUnique().HasDatabaseName("UQ_MentorStudents_Mentor_Student");
+            entity.HasIndex(assignment => assignment.StudentId).IsUnique().HasFilter("[IsActive] = 1").HasDatabaseName("UX_MentorStudents_ActiveStudent");
             entity.HasIndex(assignment => new { assignment.StudentId, assignment.IsActive }).HasDatabaseName("IX_MentorStudents_StudentId_IsActive");
             entity.HasIndex(assignment => new { assignment.MentorId, assignment.IsActive }).HasDatabaseName("IX_MentorStudents_MentorId_IsActive");
             entity.HasOne(assignment => assignment.Mentor).WithMany(mentor => mentor.MentorStudents).HasForeignKey(assignment => assignment.MentorId).OnDelete(DeleteBehavior.Restrict);
             entity.HasOne(assignment => assignment.Student).WithMany(student => student.MentorStudents).HasForeignKey(assignment => assignment.StudentId).OnDelete(DeleteBehavior.Restrict);
         });
-
         modelBuilder.Entity<Meeting>(entity =>
         {
             entity.ToTable("Meetings");
+            entity.Property(item => item.RowVersion).IsRowVersion();
             entity.HasKey(meeting => meeting.MeetingId).HasName("PK_Meetings");
             entity.Property(meeting => meeting.MeetingAt).HasColumnType("datetime2(0)").IsRequired();
             entity.Property(meeting => meeting.DurationMinutes).HasColumnType("smallint");
@@ -95,10 +90,10 @@ public sealed class MentorFlowDbContext(DbContextOptions<MentorFlowDbContext> op
             entity.HasIndex(meeting => new { meeting.MentorStudentId, meeting.MeetingAt }).HasDatabaseName("IX_Meetings_MentorStudentId_MeetingAt");
             entity.HasOne(meeting => meeting.MentorStudent).WithMany(assignment => assignment.Meetings).HasForeignKey(meeting => meeting.MentorStudentId).OnDelete(DeleteBehavior.Restrict);
         });
-
         modelBuilder.Entity<Goal>(entity =>
         {
             entity.ToTable("Goals");
+            entity.Property(item => item.RowVersion).IsRowVersion();
             entity.HasKey(goal => goal.GoalId).HasName("PK_Goals");
             entity.Property(goal => goal.Title).HasMaxLength(200).IsRequired();
             entity.Property(goal => goal.Description).HasColumnType("nvarchar(max)");

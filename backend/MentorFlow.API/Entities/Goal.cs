@@ -1,7 +1,7 @@
 namespace MentorFlow.API.Entities;
-
 public sealed class Goal
 {
+    public byte[] RowVersion { get; set; } = [];
     public int GoalId { get; set; }
     public int MentorStudentId { get; set; }
     public string Title { get; set; } = string.Empty;

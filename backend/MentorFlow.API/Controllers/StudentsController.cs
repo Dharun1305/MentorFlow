@@ -4,13 +4,26 @@ using MentorFlow.API.DTOs;
 using MentorFlow.API.Interfaces;
 
 namespace MentorFlow.API.Controllers;
-
 [ApiController, Route("api/students"), Authorize]
 public sealed class StudentsController(IStudentService service) : ControllerBase
 {
-    [HttpGet, Authorize(Roles = "Admin,Mentor,Student")] public Task<IReadOnlyList<StudentResponse>> GetAll(CancellationToken ct) => service.GetAllAsync(ct);
-    [HttpGet("{id:int}"), Authorize(Roles = "Admin,Mentor,Student")] public Task<StudentResponse> Get(int id, CancellationToken ct) => service.GetByIdAsync(id, ct);
-    [HttpPost, Authorize(Roles = "Admin")] public async Task<ActionResult<StudentResponse>> Create(CreateStudentRequest request, CancellationToken ct) { var result = await service.CreateAsync(request, ct); return CreatedAtAction(nameof(Get), new { id = result.StudentId }, result); }
-    [HttpPut("{id:int}"), Authorize(Roles = "Admin")] public Task<StudentResponse> Update(int id, UpdateStudentRequest request, CancellationToken ct) => service.UpdateAsync(id, request, ct);
-    [HttpDelete("{id:int}"), Authorize(Roles = "Admin")] public async Task<IActionResult> Delete(int id, CancellationToken ct) { await service.DeleteAsync(id, ct); return NoContent(); }
+    [HttpGet, Authorize(Roles = "Admin,Mentor,Student")]
+    public Task<PagedResponse<StudentResponse>> GetAll([FromQuery] ProfileListRequest request, CancellationToken ct) => service.GetAllAsync(request, ct);
+    [HttpGet("{id:int}"), Authorize(Roles = "Admin,Mentor,Student")]
+    public Task<StudentResponse> Get(int id, CancellationToken ct) => service.GetByIdAsync(id, ct);
+    [HttpPost, Authorize(Roles = "Admin")]
+    public async Task<ActionResult<StudentResponse>> Create(CreateStudentRequest request, CancellationToken ct)
+    {
+        var result = await service.CreateAsync(request, ct);
+        return CreatedAtAction(nameof(Get), new { id = result.StudentId }, result);
+    }
+
+    [HttpPut("{id:int}"), Authorize(Roles = "Admin")]
+    public Task<StudentResponse> Update(int id, UpdateStudentRequest request, CancellationToken ct) => service.UpdateAsync(id, request, ct);
+    [HttpDelete("{id:int}"), Authorize(Roles = "Admin")]
+    public async Task<IActionResult> Delete(int id, CancellationToken ct)
+    {
+        await service.DeleteAsync(id, ct);
+        return NoContent();
+    }
 }

@@ -144,7 +144,6 @@ BEGIN
             CONSTRAINT DF_MentorStudents_IsActive DEFAULT (1),
 
         CONSTRAINT PK_MentorStudents PRIMARY KEY CLUSTERED (MentorStudentId),
-        CONSTRAINT UQ_MentorStudents_Mentor_Student UNIQUE (MentorId, StudentId),
         CONSTRAINT CK_MentorStudents_AssignmentDates
             CHECK (UnassignedAt IS NULL OR UnassignedAt >= AssignedAt),
         CONSTRAINT FK_MentorStudents_Mentors FOREIGN KEY (MentorId)
@@ -170,6 +169,7 @@ BEGIN
             CONSTRAINT DF_Meetings_CreatedAt DEFAULT (SYSUTCDATETIME()),
         UpdatedAt       datetime2(0) NOT NULL
             CONSTRAINT DF_Meetings_UpdatedAt DEFAULT (SYSUTCDATETIME()),
+        RowVersion      rowversion NOT NULL,
         IsActive        bit NOT NULL
             CONSTRAINT DF_Meetings_IsActive DEFAULT (1),
 
@@ -200,18 +200,23 @@ BEGIN
             CONSTRAINT DF_Goals_CreatedAt DEFAULT (SYSUTCDATETIME()),
         UpdatedAt       datetime2(0) NOT NULL
             CONSTRAINT DF_Goals_UpdatedAt DEFAULT (SYSUTCDATETIME()),
+        RowVersion      rowversion NOT NULL,
         IsActive        bit NOT NULL
             CONSTRAINT DF_Goals_IsActive DEFAULT (1),
 
         CONSTRAINT PK_Goals PRIMARY KEY CLUSTERED (GoalId),
         CONSTRAINT CK_Goals_Status
-            CHECK (Status IN (N'NotStarted', N'InProgress', N'Completed', N'Cancelled')),
+            CHECK (Status IN (N'NotStarted', N'InProgress', N'Completed')),
         CONSTRAINT CK_Goals_Priority
             CHECK (Priority IN (N'Low', N'Medium', N'High')),
         CONSTRAINT FK_Goals_MentorStudents FOREIGN KEY (MentorStudentId)
             REFERENCES dbo.MentorStudents (MentorStudentId)
     );
 END;
+GO
+
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'UX_MentorStudents_ActiveStudent' AND object_id = OBJECT_ID(N'dbo.MentorStudents'))
+    CREATE UNIQUE INDEX UX_MentorStudents_ActiveStudent ON dbo.MentorStudents (StudentId) WHERE IsActive = 1;
 GO
 
 /* --------------------------------------------------------------------------

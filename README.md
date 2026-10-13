@@ -1,5 +1,9 @@
 # MentorFlow
 
+Implementation status: this repository currently contains the backend and SQL schema. The Angular screens below describe the planned frontend.
+
+See [backend setup and API contract](docs/backend-setup.md) before running the API or connecting Angular.
+
 ### Student Mentorship & Progress Platform
 
 MentorFlow is a full-stack web application for managing the student mentoring lifecycle between **Admin, Mentor, and Student**.

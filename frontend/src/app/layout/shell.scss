@@ -1,0 +1,44 @@
+:host { display: block; }
+.workspace { display: grid; grid-template-columns: 244px minmax(0, 1fr); min-height: 100dvh; }
+.sidebar { position: sticky; top: 0; height: 100dvh; display: flex; flex-direction: column; padding: 30px 22px 18px; background: white; border-right: 1px solid var(--border); z-index: 20; }
+.sidebar .brand { font-size: 1.2rem; gap: 9px; }
+.sidebar .brand-mark { width: 34px; height: 34px; font-size: 1.75rem; }
+.workspace-label { color: var(--muted); font-size: .67rem; margin: 14px 0 37px 44px; }
+.nav-label { display: block; font-size: .58rem; letter-spacing: .15em; color: #8994a5; font-weight: 700; margin: 0 12px 15px; }
+.nav-link { display: flex; align-items: center; gap: 12px; padding: 13px 14px; margin-bottom: 6px; border-radius: 9px; font-size: .8rem; font-weight: 550; color: #627088; }
+.nav-link.active { color: var(--blue); background: #edf3ff; }
+.nav-link svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 1.5; }
+.upcoming-label { margin-top: 30px; }
+.upcoming { color: #8b97aa; font-weight: 400; }
+.nav-placeholder { width: 15px; height: 15px; border: 1px solid #bac4d3; border-radius: 4px; }
+.next-badge { margin-left: auto; background: #f4f6fa; color: #929bad; font-size: .56rem; padding: 3px 5px; border-radius: 4px; }
+.sidebar-note { margin-top: auto; padding: 20px 15px; border: 1px solid #e1eaff; background: linear-gradient(145deg, #f8faff, #eef4ff); border-radius: 12px; }
+.note-spark { display: block; color: var(--blue); font-size: 1.3rem; margin-bottom: 9px; }
+.sidebar-note strong { font-size: .74rem; font-weight: 600; }
+.sidebar-note p { margin: 8px 0 0; font-size: .67rem; color: var(--muted); line-height: 1.7; }
+.sidebar-bottom { display: flex; align-items: center; gap: 11px; border-top: 1px solid var(--border); padding-top: 20px; margin-top: 25px; }
+.sidebar-bottom > div { display: grid; gap: 4px; min-width: 0; }
+.sidebar-bottom strong { font-size: .75rem; overflow: hidden; text-overflow: ellipsis; }
+.sidebar-bottom div > span { color: var(--muted); font-size: .62rem; }
+.logout-button { margin-left: auto; background: none; border: none; font-size: 1.2rem; color: #718099; border-radius: 6px; padding: 7px; }
+.main-area { min-width: 0; display: flex; flex-direction: column; }
+.topbar { height: 77px; display: flex; align-items: center; justify-content: space-between; padding: 0 36px; border-bottom: 1px solid var(--border); background: #ffffffd9; }
+.breadcrumb { display: flex; gap: 15px; align-items: center; font-size: .72rem; color: #8a95a6; }
+.breadcrumb strong { font-weight: 500; color: #40516c; }
+.header-account { display: flex; align-items: center; gap: 16px; }
+.role-label { font-size: .68rem; padding: 6px 10px; border: 1px solid var(--border); border-radius: 6px; color: #68778c; background: white; }
+#main-content { padding: 34px 36px 40px; flex: 1; outline: none; }
+.workspace-footer { display: flex; justify-content: space-between; padding: 20px 36px; color: #8e9aad; font-size: .64rem; }
+.workspace-footer > span { color: #a1aab8; }
+.menu-button, .mobile-close, .menu-backdrop { display: none; }
+@media (max-width: 1100px) { .workspace { grid-template-columns: 220px minmax(0, 1fr); } .sidebar { padding: 26px 16px 18px; } #main-content { padding: 28px 24px; } .topbar { padding: 0 24px; } }
+@media (max-width: 900px) {
+  .workspace { display: block; } .sidebar { position: fixed; left: 0; top: 0; width: 250px; transform: translateX(-100%); transition: transform .2s ease; visibility: hidden; }
+  .sidebar.open { transform: translateX(0); visibility: visible; }
+  .menu-backdrop { display: block; position: fixed; inset: 0; background: #172c5066; border: 0; z-index: 15; }
+  .menu-button { display: grid; place-items: center; width: 35px; height: 35px; background: white; border: 1px solid var(--border); border-radius: 7px; color: var(--text); font-size: 1rem; margin-right: 14px; }
+  .mobile-close { display: block; margin-top: 15px; } .breadcrumb { margin-right: auto; }
+  .main-area { min-height: 100dvh; }
+}
+@media (max-width: 600px) { .topbar { height: 66px; padding: 0 18px; } .breadcrumb { gap: 8px; font-size: .65rem; } #main-content { padding: 25px 18px; } .role-label { display: none; } .workspace-footer { padding: 15px 18px; } .workspace-footer > span { display: none; } }
+@media (prefers-reduced-motion: reduce) { .sidebar { transition: none; } }

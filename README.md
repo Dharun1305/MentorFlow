@@ -1,6 +1,8 @@
 # MentorFlow
 
-Implementation status: this repository currently contains the backend and SQL schema. The Angular screens below describe the planned frontend.
+Implementation status: the backend and SQL schema are implemented. The Angular frontend now includes authentication, responsive role workspaces, and read-only overviews. Management and editing screens below remain planned.
+
+See [frontend setup](frontend/README.md) to run Angular.
 
 See [backend setup and API contract](docs/backend-setup.md) before running the API or connecting Angular.
 

@@ -1,0 +1,53 @@
+<section class="page-heading">
+  <div><span class="eyebrow">YOUR OVERVIEW</span><h1>Hello, {{ auth.user()?.firstName }}<span>.</span></h1><p>{{ introductions[role] }}</p></div>
+  <span class="today">{{ today | date:'EEE, MMM d, y' }}</span>
+</section>
+<section class="welcome-banner" aria-label="Welcome to your workspace">
+  <div><span class="banner-label">A LITTLE GUIDANCE GOES A LONG WAY</span><h2>{{ role === 'Admin' ? 'Bring people and possibilities together.' : role === 'Mentor' ? 'Make room for the next conversation.' : 'Your next chapter starts with a small step.' }}</h2><p>{{ role === 'Admin' ? 'Every mentoring connection is a new opportunity to grow.' : role === 'Mentor' ? 'Consistent guidance helps students find their own way forward.' : 'Stay curious. Reflect often. Keep moving toward your goals.' }}</p></div>
+  <div class="banner-art" aria-hidden="true"><span class="art-orbit"></span><span class="art-orbit inner"></span><span class="art-node first"></span><span class="art-node second"></span><span class="art-center">↗</span></div>
+</section>
+@if (error()) {
+  <section class="workspace-error panel" role="alert"><div class="empty-icon" aria-hidden="true">!</div><h2>Your workspace couldn’t load</h2><p>{{ error() }}</p><button class="button button-primary" (click)="reload()">Try again</button></section>
+} @else if (loading()) {
+  <div class="loading-state" role="status" aria-live="polite"><span class="sr-only">Loading your workspace…</span><div class="metrics">@for (item of [1, 2, 3]; track item) { <div class="metric-card skeleton"></div> }</div><div class="content-grid"><div class="panel skeleton skeleton-panel"></div><div class="panel skeleton skeleton-panel"></div></div></div>
+} @else if (data(); as workspace) {
+  <div class="metrics">
+    @for (metric of workspace.metrics; track metric.label; let i = $index) {
+      <article class="metric-card"><div class="metric-top"><span>{{ metric.label }}</span><span class="metric-icon" aria-hidden="true">{{ i === 0 ? '◷' : i === 1 ? '◇' : '↗' }}</span></div><strong>{{ metric.count }}</strong><p>{{ metric.detail }}</p></article>
+    }
+  </div>
+  <div class="content-grid">
+    <section class="panel people-panel" [attr.aria-label]="role === 'Admin' ? 'Latest active assignments' : role === 'Mentor' ? 'Assigned students' : 'Your mentor'">
+      <div class="panel-heading"><div><h2>{{ role === 'Admin' ? 'Latest active assignments' : role === 'Mentor' ? 'Your mentoring group' : 'Your mentor' }}</h2><p>{{ role === 'Admin' ? 'Your most recent mentoring connections' : role === 'Mentor' ? 'A snapshot of your current students' : 'Someone to guide the way forward' }}</p></div><span class="panel-dot" aria-hidden="true">•••</span></div>
+      @if (role === 'Admin') {
+        @for (assignment of workspace.assignments; track assignment.mentorStudentId) {
+          <div class="person-row"><span class="person-avatar" aria-hidden="true">{{ assignment.studentName.charAt(0) }}</span><div class="person-details"><strong>{{ assignment.studentName }}</strong><span>Mentor: {{ assignment.mentorName }}</span></div><span class="status-badge">Active</span></div>
+        } @empty { <div class="empty-state"><div class="empty-icon" aria-hidden="true">↗</div><h3>No active assignments yet</h3><p>Your mentoring connections will appear here.</p></div> }
+      } @else if (role === 'Mentor') {
+        @for (student of workspace.students; track student.studentId) {
+          <div class="person-row"><span class="person-avatar" aria-hidden="true">{{ student.firstName.charAt(0) }}{{ student.lastName.charAt(0) }}</span><div class="person-details"><strong>{{ student.firstName }} {{ student.lastName }}</strong><span>{{ student.studentCode }}</span></div><span class="status-badge">Assigned</span></div>
+        } @empty { <div class="empty-state"><div class="empty-icon" aria-hidden="true">↗</div><h3>Your group is on its way</h3><p>Students will appear here once your administrator assigns them to you.</p></div> }
+      } @else {
+        @if (workspace.mentor; as mentor) {
+          <div class="mentor-profile"><span class="person-avatar large-avatar" aria-hidden="true">{{ mentor.firstName.charAt(0) }}{{ mentor.lastName.charAt(0) }}</span><h3>{{ mentor.firstName }} {{ mentor.lastName }}</h3><p>{{ mentor.specialization || 'Student mentorship' }}</p><a [href]="'mailto:' + mentor.email">{{ mentor.email }}</a><span class="status-badge">Your current mentor</span></div>
+        } @else { <div class="empty-state"><div class="empty-icon" aria-hidden="true">↗</div><h3>A connection to look forward to</h3><p>Your administrator will assign a mentor to help you get started.</p></div> }
+      }
+    </section>
+    @if (role === 'Admin') {
+      <section class="panel community-panel"><span class="eyebrow">BUILDING YOUR COMMUNITY</span><h2>Good mentoring starts<br>with a connection.</h2><p>Create student and mentor accounts, then bring them together through an assignment.</p><ol><li><span>01</span>Welcome your students</li><li><span>02</span>Introduce their mentors</li><li><span>03</span>Make the connection</li></ol><p class="next-note">Student, mentor, and assignment management are the next features.</p></section>
+    } @else {
+      <section class="panel"><div class="panel-heading"><div><h2>Latest meetings</h2><p>Your most recently dated conversations</p></div><span class="panel-dot" aria-hidden="true">•••</span></div>
+        @for (meeting of workspace.meetings; track meeting.meetingId) {
+          <article class="meeting-row"><div class="meeting-date"><strong>{{ meeting.meetingAt | date:'dd' }}</strong><span>{{ meeting.meetingAt | date:'MMM' }}</span></div><div><h3>{{ meeting.topic }}</h3><p>{{ role === 'Mentor' ? meeting.studentName : meeting.mentorName }}</p><span class="meeting-time">{{ meeting.meetingAt | date:'MMM d, y · h:mm a' }}@if (meeting.durationMinutes) { · {{ meeting.durationMinutes }} min }</span></div></article>
+        } @empty { <div class="empty-state"><div class="empty-icon" aria-hidden="true">◷</div><h3>Room for a conversation</h3><p>Your recorded meetings will appear here.</p></div> }
+      </section>
+    }
+  </div>
+  @if (role !== 'Admin') {
+    <section class="panel goals-panel"><div class="panel-heading"><div><h2>{{ role === 'Student' ? 'Your goals' : 'Student goals' }}</h2><p>Ordered by target date · includes earlier mentoring periods</p></div><span class="panel-dot" aria-hidden="true">•••</span></div>
+      @for (goal of workspace.goals; track goal.goalId) {
+        <article class="goal-row"><span class="goal-marker" [class.done]="goal.status === 'Completed'" aria-hidden="true">{{ goal.status === 'Completed' ? '✓' : '○' }}</span><div class="goal-details"><h3>{{ goal.title }}</h3><p>{{ role === 'Mentor' ? goal.studentName + ' · ' : '' }}{{ goal.targetDate ? (goal.targetDate | date:'MMM d, y') : 'No target date' }}</p></div><span class="priority">{{ goal.priority }} priority</span><span class="status-badge" [class.status-completed]="goal.status === 'Completed'">{{ goal.status }}</span></article>
+      } @empty { <div class="empty-state compact"><h3>A fresh start</h3><p>Your goals will appear here when your mentor creates them.</p></div> }
+    </section>
+  }
+}

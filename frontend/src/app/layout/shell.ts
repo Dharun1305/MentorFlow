@@ -1,5 +1,7 @@
 import { afterNextRender, Component, ElementRef, HostListener, inject, Injector, signal, viewChild } from '@angular/core';
-import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { filter, startWith } from 'rxjs';
 import { AuthService } from '../core/auth.service';
 
 @Component({ selector: 'app-shell', imports: [RouterLink, RouterLinkActive, RouterOutlet], templateUrl: './shell.html', styleUrl: './shell.scss' })
@@ -9,6 +11,15 @@ export class Shell {
   readonly menuOpen = signal(false);
   readonly sidebar = viewChild<ElementRef<HTMLElement>>('sidebar');
   readonly menuButton = viewChild<ElementRef<HTMLButtonElement>>('menuButton');
+  readonly pageTitle = signal('Overview');
+  readonly adminLinks = [{ label: 'Students', path: '/admin/students' }, { label: 'Mentors', path: '/admin/mentors' }, { label: 'Assignments', path: '/admin/assignments' }];
+  constructor() {
+    const router = inject(Router);
+    router.events.pipe(filter(event => event instanceof NavigationEnd), startWith(null), takeUntilDestroyed()).subscribe(() => {
+      const path = router.url.split('?')[0];
+      this.pageTitle.set(this.adminLinks.find(link => link.path === path)?.label ?? 'Overview');
+    });
+  }
   readonly nextFeatures = {
     Admin: ['Students', 'Mentors', 'Assignments'],
     Mentor: ['My students', 'Meetings', 'Goals'],

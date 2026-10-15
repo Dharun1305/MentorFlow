@@ -10,6 +10,12 @@ export const routes: Routes = [
         path: `${role.toLowerCase()}/overview`, title: `${role} workspace · MentorFlow`,
         data: { role }, canActivate: [roleGuard], loadComponent: () => import('./features/home/home').then(m => m.Home),
       })),
+      ...(['students', 'mentors'] as const).map(profileType => ({
+        path: `admin/${profileType}`, title: `${profileType === 'students' ? 'Students' : 'Mentors'} · MentorFlow`,
+        data: { role: 'Admin', profileType }, canActivate: [roleGuard],
+        loadComponent: () => import('./features/admin/profiles').then(m => m.Profiles),
+      })),
+      { path: 'admin/assignments', title: 'Assignments · MentorFlow', data: { role: 'Admin' }, canActivate: [roleGuard], loadComponent: () => import('./features/admin/assignments').then(m => m.Assignments) },
       { path: '', pathMatch: 'full', redirectTo: 'login' },
     ],
   },

@@ -37,7 +37,7 @@ public sealed class UpdateStudentRequest : UserProfileRequest
 {
     [Required, MaxLength(50)]
     public string StudentCode { get; set; } = string.Empty;
-    public bool IsActive { get; set; } = true;
+    public bool? IsActive { get; set; }
 }
 
 public sealed record StudentResponse(int StudentId, int UserId, string StudentCode, string FirstName, string LastName, string Email, bool IsActive, AssignmentSummary? ActiveAssignment);
@@ -60,7 +60,7 @@ public sealed class UpdateMentorRequest : UserProfileRequest
 
     [MaxLength(150)]
     public string? Specialization { get; set; }
-    public bool IsActive { get; set; } = true;
+    public bool? IsActive { get; set; }
 }
 
 public sealed record MentorResponse(int MentorId, int UserId, string EmployeeCode, string Specialization, string FirstName, string LastName, string Email, bool IsActive, IReadOnlyList<AssignmentSummary> Assignments);
@@ -148,3 +148,13 @@ public sealed class UpdateGoalRequest
 
 public sealed record GoalResponse(int GoalId, int MentorStudentId, int MentorId, string MentorName, int StudentId, string StudentName, string Title, string? Description, DateTime? TargetDate, string Status, string Priority, DateTime? CompletedAt, bool IsActive, byte[] RowVersion);
 public sealed record ErrorResponse(string Message, object? Errors = null);
+
+public sealed class SetProfileStatusRequest
+{
+    [Required] public bool? IsActive { get; set; }
+}
+
+public sealed class ReassignRequest
+{
+    [Range(1, int.MaxValue)] public int MentorId { get; set; }
+}

@@ -16,6 +16,9 @@ public sealed class AssignmentsController(IAssignmentService service) : Controll
         return CreatedAtAction(nameof(GetAll), result);
     }
 
+    [HttpPost("{id:int}/reassign"), Authorize(Roles = "Admin")]
+    public Task<AssignmentSummary> Reassign(int id, ReassignRequest request, CancellationToken ct) => service.ReassignAsync(id, request, ct);
+
     [HttpPut("{id:int}"), Authorize(Roles = "Admin")]
     public Task<AssignmentSummary> Update(int id, UpdateAssignmentRequest request, CancellationToken ct) => service.UpdateAsync(id, request, ct);
 }

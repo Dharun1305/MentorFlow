@@ -21,6 +21,12 @@ public sealed class AssignmentService(MentorFlowDbContext db, ICurrentUserServic
             query = query.Where(item => item.MentorId == request.MentorId.Value);
         if (request.IsActive.HasValue)
             query = query.Where(item => item.IsActive == request.IsActive.Value);
+        if (!string.IsNullOrWhiteSpace(request.Search))
+        {
+            var search = request.Search.Trim();
+            query = query.Where(item => (item.Student.User.FirstName + " " + item.Student.User.LastName).Contains(search) ||
+                item.Student.StudentCode.Contains(search) || (item.Mentor.User.FirstName + " " + item.Mentor.User.LastName).Contains(search) || item.Mentor.EmployeeCode.Contains(search));
+        }
         return await query.OrderByDescending(item => item.MentorStudentId).ToPageAsync(request, ToResponse, cancellationToken);
     }
 
@@ -72,6 +78,38 @@ public sealed class AssignmentService(MentorFlowDbContext db, ICurrentUserServic
         if (transaction is not null)
             await transaction.CommitAsync(cancellationToken);
         return ToResponse(await Query().SingleAsync(item => item.MentorStudentId == id, cancellationToken));
+    }
+
+    public async Task<AssignmentSummary> ReassignAsync(int id, ReassignRequest request, CancellationToken cancellationToken)
+    {
+        await using var transaction = db.Database.IsRelational()
+            ? await db.Database.BeginTransactionAsync(IsolationLevel.Serializable, cancellationToken) : null;
+        var previous = await db.MentorStudents.Include(item => item.Student).ThenInclude(item => item.User)
+            .SingleOrDefaultAsync(item => item.MentorStudentId == id, cancellationToken)
+            ?? throw new ApiException(StatusCodes.Status404NotFound, "Assignment not found.");
+        if (!previous.IsActive)
+            throw new ApiException(StatusCodes.Status409Conflict, "This assignment has ended. Reload the list before continuing.");
+        if (!previous.Student.IsActive || !previous.Student.User.IsActive)
+            throw new ApiException(StatusCodes.Status409Conflict, "The student account must be active.");
+        if (previous.MentorId == request.MentorId)
+            throw new ApiException(StatusCodes.Status400BadRequest, "Choose a different mentor.");
+        var mentor = await db.Mentors.SingleOrDefaultAsync(item => item.MentorId == request.MentorId && item.IsActive && item.User.IsActive, cancellationToken)
+            ?? throw new ApiException(StatusCodes.Status404NotFound, "Active mentor not found.");
+        var now = DateTime.UtcNow;
+        previous.IsActive = false;
+        previous.UnassignedAt = now;
+        previous.UpdatedAt = now;
+        // Release the filtered unique index before inserting the next period, within the same transaction.
+        await db.SaveChangesAsync(cancellationToken);
+        var next = new MentorStudent
+        {
+            MentorId = mentor.MentorId, StudentId = previous.StudentId, IsActive = true,
+            AssignedAt = now, CreatedAt = now, UpdatedAt = now
+        };
+        db.MentorStudents.Add(next);
+        await db.SaveChangesAsync(cancellationToken);
+        if (transaction is not null) await transaction.CommitAsync(cancellationToken);
+        return ToResponse(await Query().SingleAsync(item => item.MentorStudentId == next.MentorStudentId, cancellationToken));
     }
 
     private IQueryable<MentorStudent> Query() => db.MentorStudents.AsNoTracking()

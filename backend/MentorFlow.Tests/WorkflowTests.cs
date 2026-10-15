@@ -183,6 +183,87 @@ public sealed class WorkflowTests
         Assert.Equal("Newer title", (await db.Goals.FindAsync(1))!.Title);
     }
 
+    [Fact]
+    public async Task StatusChangesPreserveDetailsAndDoNotRestoreAssignments()
+    {
+        await using var db = await CreateDb();
+        var service = new StudentService(db, new PasswordHasher<User>(), new Caller(1, "Admin"));
+        await service.SetActiveAsync(3, false, Ct);
+        var activated = await service.SetActiveAsync(3, true, Ct);
+        Assert.True(activated.IsActive);
+        Assert.Equal("S3", activated.StudentCode);
+        Assert.Equal("student3@test.local", activated.Email);
+        Assert.Null(activated.ActiveAssignment);
+        Assert.False((await db.MentorStudents.FindAsync(1))!.IsActive);
+    }
+
+    [Fact]
+    public async Task EditingInactiveAccountWithoutStatusDoesNotReactivateIt()
+    {
+        await using var db = await CreateDb();
+        var service = new MentorService(db, new PasswordHasher<User>(), new Caller(1, "Admin"));
+        await service.SetActiveAsync(2, false, Ct);
+        var result = await service.UpdateAsync(2, new UpdateMentorRequest { FirstName = "Changed", LastName = "Name", Email = "mentor@test.local", EmployeeCode = "M2" }, Ct);
+        Assert.False(result.IsActive);
+        Assert.False((await db.Users.FindAsync(2))!.IsActive);
+        Assert.All(await db.MentorStudents.ToListAsync(), assignment => Assert.False(assignment.IsActive));
+    }
+
+    [Fact]
+    public async Task ReassignmentCreatesNewPeriodAndPreservesOriginalRecords()
+    {
+        await using var db = await CreateDb();
+        db.Mentors.Add(new Mentor { MentorId = 5, EmployeeCode = "M5", IsActive = true,
+            User = new User { UserId = 50, RoleId = 2, FirstName = "Next", LastName = "Mentor", Email = "next@test.local", PasswordHash = "unused", IsActive = true } });
+        await db.SaveChangesAsync();
+        var previousDate = (await db.MentorStudents.FindAsync(1))!.AssignedAt;
+        var service = new AssignmentService(db, new Caller(1, "Admin"));
+        var next = await service.ReassignAsync(1, new ReassignRequest { MentorId = 5 }, Ct);
+        Assert.NotEqual(1, next.MentorStudentId);
+        Assert.Equal(5, next.MentorId);
+        Assert.Equal(3, next.StudentId);
+        Assert.False((await db.MentorStudents.FindAsync(1))!.IsActive);
+        Assert.Equal(previousDate, (await db.MentorStudents.FindAsync(1))!.AssignedAt);
+        Assert.Equal(1, (await db.Meetings.FindAsync(1))!.MentorStudentId);
+        Assert.Equal(1, (await db.Goals.FindAsync(1))!.MentorStudentId);
+        Assert.Equal(1, await db.MentorStudents.CountAsync(item => item.StudentId == 3 && item.IsActive));
+    }
+
+    [Theory]
+    [InlineData(2, 400)]
+    [InlineData(999, 404)]
+    public async Task InvalidReassignmentLeavesOriginalPeriodActive(int mentorId, int expectedStatus)
+    {
+        await using var db = await CreateDb();
+        var service = new AssignmentService(db, new Caller(1, "Admin"));
+        var error = await Assert.ThrowsAsync<ApiException>(() => service.ReassignAsync(1, new ReassignRequest { MentorId = mentorId }, Ct));
+        Assert.Equal(expectedStatus, error.StatusCode);
+        Assert.True((await db.MentorStudents.FindAsync(1))!.IsActive);
+        Assert.Null((await db.MentorStudents.FindAsync(1))!.UnassignedAt);
+        Assert.Equal(2, await db.MentorStudents.CountAsync());
+    }
+
+    [Fact]
+    public async Task EndedAssignmentCannotBeTransferred()
+    {
+        await using var db = await CreateDb();
+        var service = new AssignmentService(db, new Caller(1, "Admin"));
+        await service.UpdateAsync(1, new UpdateAssignmentRequest { IsActive = false }, Ct);
+        var error = await Assert.ThrowsAsync<ApiException>(() => service.ReassignAsync(1, new ReassignRequest { MentorId = 999 }, Ct));
+        Assert.Equal(409, error.StatusCode);
+        Assert.Equal(2, await db.MentorStudents.CountAsync());
+    }
+
+    [Fact]
+    public async Task AssignmentSearchMatchesCodesAndKeepsRoleRestrictions()
+    {
+        await using var db = await CreateDb();
+        var admin = new AssignmentService(db, new Caller(1, "Admin"));
+        Assert.Equal(4, Assert.Single((await admin.GetAllAsync(new AssignmentListRequest { Search = "S4" }, Ct)).Items).StudentId);
+        var student = new AssignmentService(db, new Caller(3, "Student"));
+        Assert.Empty((await student.GetAllAsync(new AssignmentListRequest { Search = "S4" }, Ct)).Items);
+    }
+
     private static async Task<MentorFlowDbContext> CreateDb()
     {
         var db = new MentorFlowDbContext(new DbContextOptionsBuilder<MentorFlowDbContext>().UseInMemoryDatabase(Guid.NewGuid().ToString()).Options);

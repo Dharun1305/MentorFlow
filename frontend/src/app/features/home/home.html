@@ -18,7 +18,7 @@
   </div>
   <div class="content-grid">
     <section class="panel people-panel" [attr.aria-label]="role === 'Admin' ? 'Latest active assignments' : role === 'Mentor' ? 'Assigned students' : 'Your mentor'">
-      <div class="panel-heading"><div><h2>{{ role === 'Admin' ? 'Latest active assignments' : role === 'Mentor' ? 'Your mentoring group' : 'Your mentor' }}</h2><p>{{ role === 'Admin' ? 'Your most recent mentoring connections' : role === 'Mentor' ? 'A snapshot of your current students' : 'Someone to guide the way forward' }}</p></div><span class="panel-dot" aria-hidden="true">•••</span></div>
+      <div class="panel-heading"><div><h2>{{ role === 'Admin' ? 'Latest active assignments' : role === 'Mentor' ? 'Your mentoring group' : 'Your mentor' }}</h2><p>{{ role === 'Admin' ? 'Your most recent mentoring connections' : role === 'Mentor' ? 'A snapshot of your current students' : 'Someone to guide the way forward' }}</p></div>@if (role === 'Admin') { <a routerLink="/admin/assignments" [queryParams]="{status: 'active'}" class="text-button">View all →</a> }</div>
       @if (role === 'Admin') {
         @for (assignment of workspace.assignments; track assignment.mentorStudentId) {
           <div class="person-row"><span class="person-avatar" aria-hidden="true">{{ assignment.studentName.charAt(0) }}</span><div class="person-details"><strong>{{ assignment.studentName }}</strong><span>Mentor: {{ assignment.mentorName }}</span></div><span class="status-badge">Active</span></div>
@@ -34,7 +34,7 @@
       }
     </section>
     @if (role === 'Admin') {
-      <section class="panel community-panel"><span class="eyebrow">BUILDING YOUR COMMUNITY</span><h2>Good mentoring starts<br>with a connection.</h2><p>Create student and mentor accounts, then bring them together through an assignment.</p><ol><li><span>01</span>Welcome your students</li><li><span>02</span>Introduce their mentors</li><li><span>03</span>Make the connection</li></ol><p class="next-note">Student, mentor, and assignment management are the next features.</p></section>
+      <section class="panel community-panel"><span class="eyebrow">BUILDING YOUR COMMUNITY</span><h2>Good mentoring starts<br>with a connection.</h2><p>Create student and mentor accounts, then bring them together through an assignment.</p><ol><li><span>01</span><a routerLink="/admin/students">Manage students →</a></li><li><span>02</span><a routerLink="/admin/mentors">Manage mentors →</a></li><li><span>03</span><a routerLink="/admin/assignments">Manage assignments →</a></li></ol><p class="next-note">Start with the accounts, then create a mentoring connection.</p></section>
     } @else {
       <section class="panel"><div class="panel-heading"><div><h2>Latest meetings</h2><p>Your most recently dated conversations</p></div><span class="panel-dot" aria-hidden="true">•••</span></div>
         @for (meeting of workspace.meetings; track meeting.meetingId) {

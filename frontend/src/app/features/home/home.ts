@@ -1,4 +1,5 @@
 import { DatePipe } from '@angular/common';
+import { RouterLink } from '@angular/router';
 import { Component, DestroyRef, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { finalize } from 'rxjs';
@@ -6,7 +7,7 @@ import { AuthService } from '../../core/auth.service';
 import { errorMessage } from '../../core/api-error';
 import { HomeData, HomeService } from './home.service';
 
-@Component({ selector: 'app-home', imports: [DatePipe], templateUrl: './home.html', styleUrl: './home.scss' })
+@Component({ selector: 'app-home', imports: [DatePipe, RouterLink], templateUrl: './home.html', styleUrl: './home.scss' })
 export class Home {
   readonly auth = inject(AuthService);
   private readonly service = inject(HomeService);

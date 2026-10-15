@@ -9,9 +9,15 @@
       <a class="nav-link" [routerLink]="auth.home()" routerLinkActive="active" ariaCurrentWhenActive="page" (click)="menuOpen.set(false)">
         <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>Overview
       </a>
+      @if (auth.user()?.role === 'Admin') {
+        @for (link of adminLinks; track link.path) {
+          <a class="nav-link" [routerLink]="link.path" routerLinkActive="active" ariaCurrentWhenActive="page" (click)="menuOpen.set(false)"><span class="nav-placeholder" aria-hidden="true"></span>{{ link.label }}</a>
+        }
+      } @else {
       <span class="nav-label upcoming-label">COMING NEXT</span>
       @for (label of nextFeatures[auth.user()?.role ?? 'Student']; track label) {
         <span class="nav-link upcoming" aria-disabled="true"><span class="nav-placeholder" aria-hidden="true"></span>{{ label }}<span class="next-badge">Next</span></span>
+      }
       }
     </nav>
     <div class="sidebar-note"><span class="note-spark" aria-hidden="true">↗</span><strong>Progress starts here.</strong><p>Every conversation is a step forward.</p></div>
@@ -21,7 +27,7 @@
   <div class="main-area" [attr.inert]="menuOpen() ? '' : null">
     <header class="topbar">
       <button #menuButton class="menu-button" (click)="openMenu()" [attr.aria-expanded]="menuOpen()" aria-controls="workspace-navigation" aria-label="Open navigation">☰</button>
-      <div class="breadcrumb">Workspace<span aria-hidden="true">/</span><strong>Overview</strong></div>
+      <div class="breadcrumb">Workspace<span aria-hidden="true">/</span><strong>{{ pageTitle() }}</strong></div>
       <div class="header-account"><span class="role-label">{{ auth.user()?.role }}</span><span class="small-avatar" aria-hidden="true">{{ initials() }}</span></div>
     </header>
     <main id="main-content" tabindex="-1"><router-outlet /></main>

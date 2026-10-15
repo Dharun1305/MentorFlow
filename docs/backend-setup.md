@@ -8,6 +8,8 @@ For a new database, execute `database/MentorFlowDb.sql` in SQL Server.
 For an existing database, execute `database/upgrades/001_backend_integrity.sql` before running this version of the API.
 The upgrade adds meeting/goal row versions, enforces one active mentorship per student, and permits separate periods for repeated mentor/student pairs. It stops without changing the schema if duplicate active assignments or unsupported goal statuses need review. Re-running it is supported. Original assignment history that was overwritten by older code cannot be reconstructed.
 
+The Admin workflow release adds API endpoints only and needs no additional schema upgrade beyond `001_backend_integrity.sql`.
+
 The schema remains managed by versioned SQL scripts; the API does not automatically migrate it.
 
 ## Configuration and startup
@@ -38,7 +40,7 @@ All five list endpoints (`students`, `mentors`, `assignments`, `meetings`, `goal
 Use `page` (minimum 1) and `pageSize` (1–100). List ordering is stable. Filters never expand the caller's role-based access.
 
 - Students/mentors: `search` matches name, email or profile code; `isActive` filters profile activation.
-- Assignments: `studentId`, `mentorId`, `isActive`.
+- Assignments: `studentId`, `mentorId`, `isActive`, `search` (student/mentor name or code).
 - Meetings: `studentId`, `mentorId`, `from`, `to` (inclusive timestamps, with an offset or `Z`).
 - Goals: `studentId`, `mentorId`, `status` (`NotStarted`, `InProgress`, `Completed`; displayed status names also accepted).
 
@@ -51,6 +53,10 @@ Meeting and goal responses contain a base64 `rowVersion`. Return that exact valu
 ## Assignment and access rules
 
 Each student has at most one active assignment. End a period with `PUT /api/assignments/{id}` and `{ "isActive": false }`; start another with POST. An ended period cannot be reactivated. Reassigning the same mentor creates a new row and preserves the original dates and records.
+
+For transfers, use `POST /api/assignments/{id}/reassign` with `{ "mentorId": 7 }`. The API validates the active student and new mentor, ends the original period and inserts the new one in a serializable transaction. A failed database write rolls back both changes. Selecting the same mentor returns 400; transferring an ended period returns 409.
+
+Use `PATCH /api/students/{id}/status` or `PATCH /api/mentors/{id}/status` with `{ "isActive": false }` (or true) to change activation without overwriting profile fields. Missing activation is a 400 error. Profile PUT requests may omit `isActive` to preserve the current state; existing clients can still explicitly send it. Passwords cannot be changed through profile PUT.
 
 Both profile update with `isActive: false` and DELETE deactivate the account and end active assignments. Reactivating a profile does not restore its earlier assignments.
 
@@ -67,3 +73,7 @@ Validation and service errors use camelCase `message` and `errors`. Database con
 Dashboard aggregates, goal type (short/long term), feedback revision history, and a progress timeline are separate features. They are not introduced by this backend integrity change.
 
 Regression tests use EF InMemory for service behavior and inspect the SQL Server model. A real SQL Server smoke test is still required to verify the upgrade script, database-enforced uniqueness under simultaneous writes, and rowversion behavior.
+
+## Dependency security
+
+`System.Security.Cryptography.Pkcs` is explicitly pinned to patched version `10.0.13`, overriding the SQL client dependency on `9.0.4`. See the Microsoft advisories [GHSA-846f-f764-76mx](https://github.com/advisories/GHSA-846f-f764-76mx) and [GHSA-2fmv-rv2c-59x7](https://github.com/advisories/GHSA-2fmv-rv2c-59x7). Use a serviced .NET 10 SDK/runtime for local development and deployment as well.

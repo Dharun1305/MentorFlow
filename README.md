@@ -1,6 +1,6 @@
 # MentorFlow
 
-Implementation status: the backend and SQL schema are implemented. The Angular frontend now includes authentication, responsive role workspaces, and read-only overviews. Management and editing screens below remain planned.
+Implementation status: the backend and SQL schema are implemented. The Angular frontend now includes authentication, responsive role workspaces, overviews, and Admin student/mentor/assignment management. Mentor/Student editing screens remain planned.
 
 See [frontend setup](frontend/README.md) to run Angular.
 
@@ -142,7 +142,6 @@ Services/
 DTOs/
 Entities/
 Data/
-Repositories/
 ```
 
 ---

@@ -1,0 +1,8 @@
+<app-modal [title]="assignment() ? 'Reassign student' : 'New assignment'" [busy]="busy()" (closed)="closed.emit()">
+  @if (assignment(); as previous) { <div class="assignment-context"><strong>{{ previous.studentName }}</strong><p>Current mentor: {{ previous.mentorName }}</p><p>The transfer ends this period and starts a new one. Existing meetings and goals stay with their original period.</p></div> }
+  @else { <p class="form-intro">Choose an unassigned active student and an active mentor. Accounts can be created on the Students and Mentors pages.</p><app-person-picker kind="students" [selectedId]="student()?.studentId ?? null" [disabled]="busy()" [unassignedOnly]="true" (selected)="selectStudent($event)" /> }
+  <app-person-picker kind="mentors" [selectedId]="mentor()?.mentorId ?? null" [disabled]="busy()" [excludeId]="assignment()?.mentorId ?? null" (selected)="selectMentor($event)" />
+  @if (student() || mentor()) { <p class="selection-summary" role="status">{{ student() ? student()!.firstName + ' ' + student()!.lastName : assignment()?.studentName }} → {{ mentor() ? mentor()!.firstName + ' ' + mentor()!.lastName : 'Choose a mentor' }}</p> }
+  @if (error()) { <p class="error-banner" role="alert">{{ error() }}</p> }
+  <div class="dialog-actions"><button type="button" class="button button-secondary" (click)="closed.emit()" [disabled]="busy()">Cancel</button><button type="button" class="button button-primary" [disabled]="busy() || !mentor() || (!assignment() && !student())" (click)="submit()">{{ busy() ? 'Saving…' : assignment() ? 'Transfer student' : 'Assign mentor' }}</button></div>
+</app-modal>

@@ -21,7 +21,7 @@ public sealed class MentorService(MentorFlowDbContext db, IPasswordHasher<User> 
         if (!string.IsNullOrWhiteSpace(request.Search))
         {
             var search = request.Search.Trim();
-            query = query.Where(item => item.User.FirstName.Contains(search) || item.User.LastName.Contains(search) || item.User.Email.Contains(search) || item.EmployeeCode.Contains(search));
+            query = query.Where(item => (item.User.FirstName + " " + item.User.LastName).Contains(search) || item.User.Email.Contains(search) || item.EmployeeCode.Contains(search));
         }
 
         return await query.OrderBy(item => item.MentorId).ToPageAsync(request, ToResponse, cancellationToken);
@@ -76,15 +76,31 @@ public sealed class MentorService(MentorFlowDbContext db, IPasswordHasher<User> 
         mentor.User.FirstName = request.FirstName.Trim();
         mentor.User.LastName = request.LastName.Trim();
         mentor.User.Email = email;
-        AccountLifecycle.SetActive(mentor.User, mentor.MentorStudents, request.IsActive, DateTime.UtcNow);
+        AccountLifecycle.SetActive(mentor.User, mentor.MentorStudents, request.IsActive ?? mentor.IsActive, DateTime.UtcNow);
         mentor.User.UpdatedAt = DateTime.UtcNow;
         mentor.EmployeeCode = code;
         mentor.Specialization = request.Specialization?.Trim();
-        mentor.IsActive = request.IsActive;
+        mentor.IsActive = request.IsActive ?? mentor.IsActive;
         mentor.UpdatedAt = DateTime.UtcNow;
         await db.SaveChangesAsync(cancellationToken);
         if (transaction is not null)
             await transaction.CommitAsync(cancellationToken);
+        return ToResponse(await Query().SingleAsync(item => item.MentorId == id, cancellationToken));
+    }
+
+    public async Task<MentorResponse> SetActiveAsync(int id, bool isActive, CancellationToken cancellationToken)
+    {
+        await using var transaction = db.Database.IsRelational()
+            ? await db.Database.BeginTransactionAsync(IsolationLevel.Serializable, cancellationToken) : null;
+        var profile = await db.Mentors.Include(item => item.User).Include(item => item.MentorStudents)
+            .SingleOrDefaultAsync(item => item.MentorId == id, cancellationToken)
+            ?? throw new ApiException(StatusCodes.Status404NotFound, "Mentor not found.");
+        var now = DateTime.UtcNow;
+        profile.IsActive = isActive;
+        profile.UpdatedAt = now;
+        AccountLifecycle.SetActive(profile.User, profile.MentorStudents, isActive, now);
+        await db.SaveChangesAsync(cancellationToken);
+        if (transaction is not null) await transaction.CommitAsync(cancellationToken);
         return ToResponse(await Query().SingleAsync(item => item.MentorId == id, cancellationToken));
     }
 

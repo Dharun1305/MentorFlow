@@ -8,7 +8,7 @@
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
     "test:ci": "ng test --watch=false --browsers=ChromeHeadlessNoSandbox",
-    "test:e2e": "npm run build && node scripts/browser-checks.mjs"
+    "test:e2e": "npm run build && node scripts/browser-checks.mjs && node scripts/admin-browser-checks.mjs"
   },
   "prettier": {
     "printWidth": 100,

@@ -1,0 +1,29 @@
+<div class="admin-page">
+  <section class="admin-heading"><div><span class="eyebrow">ADMINISTRATION</span><h1>{{ heading }}<span>.</span></h1><p>{{ kind === 'students' ? 'Welcome students and keep their mentoring connections up to date.' : 'Build the team that supports every student’s growth.' }}</p></div><button class="button button-primary" type="button" (click)="add()">+ Add {{ singular }}</button></section>
+  @if (message()) { <p class="success-banner" role="status">{{ message() }}</p> }
+  @if (actionError()) { <p class="error-banner" role="alert">{{ actionError() }}</p> }
+  <section class="panel admin-list">
+    <form class="list-toolbar" (submit)="$event.preventDefault(); filter()"><div class="search-field"><label class="sr-only" for="profile-search">Search {{ kind }}</label><input id="profile-search" type="search" [formControl]="search" placeholder="Search name, email or code" maxlength="100"><button class="button button-secondary" type="submit">Search</button></div><div class="status-filter"><label for="profile-status">Status</label><select id="profile-status" [formControl]="status" (change)="filter()"><option value="all">All accounts</option><option value="active">Active</option><option value="inactive">Inactive</option></select></div></form>
+    @if (loading()) { <p class="list-state" role="status">Loading {{ kind }}…</p> }
+    @else if (error()) { <div class="list-state" role="alert"><p>{{ error() }}</p><button type="button" class="button button-secondary" (click)="load()">Try again</button></div> }
+    @else if (data(); as result) {
+      @if (result.items.length) {
+        <table class="admin-table"><caption class="sr-only">{{ heading }} accounts</caption><thead><tr><th scope="col">Name</th><th scope="col">{{ kind === 'students' ? 'Student code' : 'Employee code' }}</th><th scope="col">{{ kind === 'students' ? 'Current mentor' : 'Mentoring group' }}</th><th scope="col">Status</th><th scope="col">Actions</th></tr></thead><tbody>
+          @for (profile of result.items; track id(profile)) {
+            <tr><td data-label="Name"><strong>{{ profile.firstName }} {{ profile.lastName }}</strong><span class="row-caption">{{ profile.email }}</span></td><td data-label="Code">{{ code(profile) }}</td><td data-label="Mentoring">{{ mentorship(profile) }}</td><td data-label="Status"><span class="account-status" [class.inactive]="!profile.isActive">{{ profile.isActive ? 'Active' : 'Inactive' }}</span></td><td class="row-actions" data-label="Actions"><button type="button" class="text-button" (click)="edit(profile)" [disabled]="opening()">Edit<span class="sr-only"> {{ profile.firstName }} {{ profile.lastName }}</span></button><button type="button" class="text-button" [class.danger-text]="profile.isActive" (click)="confirmStatus(profile)">{{ profile.isActive ? 'Deactivate' : 'Activate' }}<span class="sr-only"> {{ profile.firstName }} {{ profile.lastName }}</span></button></td></tr>
+          }
+        </tbody></table>
+      } @else { <div class="list-state"><h2>No {{ kind }} found</h2><p>{{ search.value || status.value !== 'all' ? 'Try another search or clear the filters.' : 'Add the first account to get started.' }}</p>@if (search.value || status.value !== 'all') { <button type="button" class="text-button" (click)="clearFilters()">Clear filters</button> }</div> }
+      <app-pager [page]="page()" [total]="result.totalCount" [label]="kind" [busy]="loading()" (changed)="changePage($event)" />
+    }
+  </section>
+  <p class="page-hint">Manage mentoring connections on the <a routerLink="/admin/assignments">Assignments</a> page. Deactivation preserves account history.</p>
+  @if (editor(); as state) { <app-profile-editor [kind]="kind" [profile]="state.profile" (saved)="saved($event)" (closed)="editor.set(null)" /> }
+  @if (pendingStatus(); as profile) {
+    <app-modal [title]="(profile.isActive ? 'Deactivate ' : 'Activate ') + profile.firstName + '?'" [busy]="statusBusy()" (closed)="pendingStatus.set(null)">
+      <p class="form-intro">{{ profile.isActive ? 'This blocks sign-in and ends all active assignments for this account. Existing meetings and goals are preserved.' : 'This allows the account to sign in again. Previous assignments stay ended; create a new assignment separately.' }}</p>
+      @if (statusError()) { <p class="error-banner" role="alert">{{ statusError() }}</p> }
+      <div class="dialog-actions"><button type="button" class="button button-secondary" (click)="pendingStatus.set(null)" [disabled]="statusBusy()">Cancel</button><button type="button" class="button" [class.button-danger]="profile.isActive" [class.button-primary]="!profile.isActive" (click)="changeStatus()" [disabled]="statusBusy()">{{ statusBusy() ? 'Updating…' : profile.isActive ? 'Deactivate account' : 'Activate account' }}</button></div>
+    </app-modal>
+  }
+</div>

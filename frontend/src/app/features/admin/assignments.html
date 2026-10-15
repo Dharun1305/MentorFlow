@@ -1,0 +1,24 @@
+<div class="admin-page">
+  <section class="admin-heading"><div><span class="eyebrow">MENTORING CONNECTIONS</span><h1>Assignments<span>.</span></h1><p>Connect students with mentors and preserve every period of their journey.</p></div><button type="button" class="button button-primary" (click)="editor.set({assignment: null})">+ New assignment</button></section>
+  @if (message()) { <p class="success-banner" role="status">{{ message() }}</p> }
+  <section class="panel admin-list">
+    <form class="list-toolbar" (submit)="$event.preventDefault(); filter()"><div class="search-field"><label class="sr-only" for="assignment-search">Search assignments</label><input id="assignment-search" type="search" [formControl]="search" placeholder="Search student, mentor or code" maxlength="100"><button type="submit" class="button button-secondary">Search</button></div><div class="status-filter"><label for="assignment-status">Status</label><select id="assignment-status" [formControl]="status" (change)="filter()"><option value="all">All periods</option><option value="active">Active</option><option value="ended">Ended</option></select></div></form>
+    @if (loading()) { <p class="list-state" role="status">Loading assignments…</p> }
+    @else if (error()) { <div class="list-state" role="alert"><p>{{ error() }}</p><button type="button" class="button button-secondary" (click)="load()">Try again</button></div> }
+    @else if (data(); as result) {
+      @if (result.items.length) {
+        <table class="admin-table"><caption class="sr-only">Mentor assignment periods</caption><thead><tr><th scope="col">Student</th><th scope="col">Mentor</th><th scope="col">Assigned</th><th scope="col">Status</th><th scope="col">Actions</th></tr></thead><tbody>
+          @for (assignment of result.items; track assignment.mentorStudentId) {
+            <tr><td data-label="Student"><strong>{{ assignment.studentName }}</strong></td><td data-label="Mentor">{{ assignment.mentorName }}</td><td data-label="Assigned">{{ assignment.assignedAt | date:'MMM d, y' }}</td><td data-label="Status"><span class="account-status" [class.inactive]="!assignment.isActive">{{ assignment.isActive ? 'Active' : 'Ended' }}</span></td><td class="row-actions" data-label="Actions">@if (assignment.isActive) { <button type="button" class="text-button" (click)="editor.set({assignment})">Reassign<span class="sr-only"> {{ assignment.studentName }}</span></button><button type="button" class="text-button danger-text" (click)="confirmEnd(assignment)">End<span class="sr-only"> assignment for {{ assignment.studentName }}</span></button> } @else { <span class="history-label">Read-only history</span> }</td></tr>
+          }
+        </tbody></table>
+      } @else { <div class="list-state"><h2>No assignments found</h2><p>{{ search.value || status.value !== 'all' ? 'Try another search or clear the filters.' : 'Create the first mentoring connection to get started.' }}</p>@if (search.value || status.value !== 'all') { <button type="button" class="text-button" (click)="clearFilters()">Clear filters</button> }</div> }
+      <app-pager [page]="page()" [total]="result.totalCount" label="assignments" [busy]="loading()" (changed)="changePage($event)" />
+    }
+  </section>
+  <p class="page-hint">Need an account first? Manage <a routerLink="/admin/students">students</a> or <a routerLink="/admin/mentors">mentors</a>. Each student can have one active mentor.</p>
+  @if (editor(); as state) { <app-assignment-editor [assignment]="state.assignment" (saved)="saved($event)" (closed)="editor.set(null)" /> }
+  @if (ending(); as assignment) {
+    <app-modal title="End this assignment?" [busy]="endBusy()" (closed)="ending.set(null)"><p class="form-intro">{{ assignment.studentName }} will no longer be actively assigned to {{ assignment.mentorName }}. Their existing meetings and goals remain in history and become read-only.</p><p class="form-intro">To change mentors in one step, cancel and choose Reassign instead.</p>@if (endError()) { <p class="error-banner" role="alert">{{ endError() }}</p> }<div class="dialog-actions"><button type="button" class="button button-secondary" [disabled]="endBusy()" (click)="ending.set(null)">Cancel</button><button type="button" class="button button-danger" [disabled]="endBusy()" (click)="end()">{{ endBusy() ? 'Ending…' : 'End assignment' }}</button></div></app-modal>
+  }
+</div>

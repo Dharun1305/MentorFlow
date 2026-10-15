@@ -20,6 +20,9 @@ public sealed class MentorsController(IMentorService service) : ControllerBase
 
     [HttpPut("{id:int}"), Authorize(Roles = "Admin")]
     public Task<MentorResponse> Update(int id, UpdateMentorRequest request, CancellationToken ct) => service.UpdateAsync(id, request, ct);
+    [HttpPatch("{id:int}/status"), Authorize(Roles = "Admin")]
+    public Task<MentorResponse> SetStatus(int id, SetProfileStatusRequest request, CancellationToken ct) => service.SetActiveAsync(id, request.IsActive!.Value, ct);
+
     [HttpDelete("{id:int}"), Authorize(Roles = "Admin")]
     public async Task<IActionResult> Delete(int id, CancellationToken ct)
     {

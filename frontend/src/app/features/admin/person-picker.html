@@ -1,0 +1,13 @@
+<fieldset class="person-picker" [disabled]="disabled()"><legend>Choose {{ kind() === 'students' ? 'a student' : 'a mentor' }}</legend>
+  <form class="picker-search" (submit)="$event.preventDefault(); filter()"><label class="sr-only" [for]="kind() + '-picker-search'">Search active {{ kind() }}</label><input type="search" [id]="kind() + '-picker-search'" [formControl]="search" [placeholder]="'Search active ' + kind()" maxlength="100"><button type="submit" class="button button-secondary">Search</button></form>
+  @if (loading()) { <p class="picker-state" role="status">Loading choices…</p> }
+  @else if (error()) { <div class="picker-state" role="alert"><p>{{ error() }}</p><button type="button" class="text-button" (click)="load()">Retry choices</button></div> }
+  @else if (data(); as result) {
+    <div class="picker-options" role="radiogroup" [attr.aria-label]="'Active ' + kind()">
+      @for (person of result.items; track id(person)) {
+        <label class="picker-option" [class.unavailable]="unavailable(person)"><input type="radio" [name]="kind() + '-choice'" [checked]="selectedId() === id(person)" [disabled]="unavailable(person) || disabled()" (change)="selected.emit(person)"><span><strong>{{ person.firstName }} {{ person.lastName }}</strong><small>{{ code(person) }} · {{ person.email }}</small>@if (unavailable(person)) { <small>{{ id(person) === excludeId() ? 'Current mentor — choose someone different' : 'Already assigned to a mentor' }}</small> }</span></label>
+      } @empty { <p class="picker-state">No matching active {{ kind() }}. Try another search or create and activate an account first.</p> }
+    </div>
+    <app-pager [page]="page()" [pageSize]="5" [total]="result.totalCount" [label]="'active ' + kind()" [busy]="disabled() || loading()" (changed)="changePage($event)" />
+  }
+</fieldset>

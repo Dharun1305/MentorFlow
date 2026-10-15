@@ -1,26 +1,13 @@
 // Browser checks use controlled API fixtures. They do not replace a real SQL Server integration test.
 import assert from 'node:assert/strict';
-import { createServer } from 'node:http';
-import { readFile, stat, mkdir } from 'node:fs/promises';
+import { mkdir } from 'node:fs/promises';
+import { startFrontend } from './test-server.mjs';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import { chromium } from 'playwright';
 
-const root = path.resolve(fileURLToPath(new URL('../dist/mentorflow/browser/', import.meta.url)));
 const output = fileURLToPath(new URL('../test-results/', import.meta.url));
-const mime = { '.js': 'text/javascript', '.css': 'text/css', '.svg': 'image/svg+xml', '.html': 'text/html', '.ico': 'image/x-icon' };
-const server = createServer(async (request, response) => {
-  try {
-    let file = path.resolve(root, `.${new URL(request.url, 'http://localhost').pathname}`);
-    if (!file.startsWith(root + path.sep)) file = path.join(root, 'index.html');
-    try { if (!(await stat(file)).isFile()) file = path.join(root, 'index.html'); }
-    catch { file = path.join(root, 'index.html'); }
-    response.setHeader('Content-Type', mime[path.extname(file)] ?? 'application/octet-stream');
-    response.end(await readFile(file));
-  } catch { response.writeHead(500).end(); }
-});
-await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
-const base = `http://127.0.0.1:${server.address().port}`;
+const { base, close } = await startFrontend();
 const browser = await chromium.launch({ headless: true, executablePath: process.env.CHROME_BIN || undefined, args: ['--no-sandbox', '--disable-dev-shm-usage'] });
 const errors = [];
 let checks = 0;
@@ -148,5 +135,5 @@ try {
   console.log(`${checks} browser checks passed. Screenshots: test-results/`);
 } finally {
   await browser.close();
-  await new Promise(resolve => server.close(resolve));
+  await close();
 }

@@ -2,7 +2,7 @@
 
 Angular 20 frontend for the standalone MentorFlow mentoring platform. Uses standalone components, Reactive Forms, HttpClient, signals, and plain HTML/SCSS. No GoodBooks components or dependencies.
 
-## Implemented in this milestone
+## Implemented
 
 - Responsive blue-and-white login page and application shell.
 - Login, logout, session restoration through `/api/auth/me`, and automatic expiry.
@@ -11,7 +11,11 @@ Angular 20 frontend for the standalone MentorFlow mentoring platform. Uses stand
 - Read-only counts and record previews from the existing paginated APIs.
 - Loading, empty, error and retry states; keyboard-accessible mobile navigation.
 
-Student/mentor forms, assignment management, and meeting/goal editing are upcoming features, visibly marked as such. This milestone does not include those forms or new analytics endpoints.
+Admin management now includes student/mentor account creation and editing, server-side search/status filtering and pagination, dedicated activation changes, assignment creation, atomic mentor transfers, ending periods, and read-only assignment history. Pickers search and paginate through active profiles without a 100-record cutoff. Already-assigned students and the current mentor are visibly unavailable when relevant.
+
+Editing an account preserves its activation and password. Deactivation requires confirmation and ends active assignments. Reactivation never restores ended assignments. New account creation filters the list to the new code so the saved row is visible.
+
+Mentor/Student management and meeting/goal editing remain upcoming features. No new analytics endpoints are introduced.
 
 ## Start locally
 
@@ -46,7 +50,7 @@ npm run test:e2e
 
 `npm run test:ci` uses the explicit ChromeHeadlessNoSandbox launcher for CI containers. Set `CHROME_BIN` if Chrome is not in its usual location. Use the normal ChromeHeadless launcher on development machines.
 
-Browser checks serve the production build locally and intercept API calls with controlled fixtures. They cover all three roles, restoration, logout, cross-role routing, validation, API errors, mobile overflow/navigation, and rejected sessions. Screenshots are written to ignored `test-results/`. These tests do not verify real SQL Server connectivity or persistence.
+Browser checks serve the production build locally and intercept API calls with controlled fixtures. They cover all three roles, restoration, logout, cross-role routing, validation, API errors, mobile overflow/navigation, rejected sessions, and the complete Admin workflow. The Admin fixture has more than 100 students and verifies picker page 21, profile IDs rather than user IDs, duplicate submissions, activation preservation, failed transfers, and assignment history. Screenshots are written to ignored `test-results/`. These tests do not verify real SQL Server connectivity or persistence.
 
 ## Deployment
 
